@@ -1,4 +1,4 @@
-from telegram.ext import Updater,CommandHandler,Filters,CallbackQueryHandler
+from telegram.ext import Updater,CommandHandler,Filters,CallbackQueryHandler,UpdateFilter,MessageHandler
 import logging
 from telegram import InlineKeyboardButton,InlineKeyboardMarkup
 import sqlite3
@@ -14,8 +14,23 @@ ADMIN_ID = 800882871 #user_id of sender of file and broadcaster
 characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 
 
-def join_channle(user_id):
-    pass
+
+
+
+#def is_joined(user_id):
+  #  connection = sqlite3.connect('database.db')
+   # cursor = connection.cursor()
+  #  cursor.execute(f'''select channle_id
+  #  from join_channles
+   # ''')
+   # channle_list = cursor.fetchall()
+   # for tup in channle_list:
+    #    pass
+ #
+
+def test(update,context):
+    print('join nisti')
+
 
 
 def forward(context,message_id):
@@ -44,11 +59,11 @@ def copy(context,message_id):
 def button(update , context):
     query = update.callback_query
     way = query.data
-    message_id = way[1:]
+    message_id = way[2:]
     
-    if(way[0] == '1'):
+    if(way[1] == '1'):
         gozine = 'ارسال همگانی با فوروارد'
-    elif(way[0] == '2'):
+    elif(way[1] == '2'):
         gozine = 'ارسال همگانی عادی'
     else:
         query.edit_message_text(text = 'عملیات لغو شد')
@@ -56,9 +71,9 @@ def button(update , context):
 
     query.edit_message_text(text = f'''گزینه انتخابی:{gozine}
 در حال ارسال پیام به کاربران...''')
-    if(way[0] == '1'):
+    if(way[1] == '1'):
         forward(context,message_id)
-    if(way[0] == '2'):
+    if(way[1] == '2'):
         copy(context,message_id)
     context.bot.send_message(chat_id = ADMIN_ID , text = 'ارسال با موفقیت انجام شد!')
 
@@ -67,9 +82,9 @@ def button(update , context):
 
 def broadcast(update , context):
     keyboard = [
-        [InlineKeyboardButton('ارسال همگانی با فوروارد',callback_data =f'1{update.message.reply_to_message.message_id}')],
-        [InlineKeyboardButton('ارسال همگانی عادی',callback_data = f'2{update.message.reply_to_message.message_id}')],
-        [InlineKeyboardButton('لغو عملیات',callback_data = f'3{update.message.reply_to_message.message_id}')],
+        [InlineKeyboardButton('ارسال همگانی با فوروارد',callback_data =f'b1{update.message.reply_to_message.message_id}')],
+        [InlineKeyboardButton('ارسال همگانی عادی',callback_data = f'b2{update.message.reply_to_message.message_id}')],
+        [InlineKeyboardButton('لغو عملیات',callback_data = f'b3{update.message.reply_to_message.message_id}')],
 
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -206,13 +221,27 @@ def main():
 
     dispatcher = updater.dispatcher
 
+    class Getting_member(UpdateFilter):
+        def filter(self, update):
+
+            chat_id = update.effective_chat.id
+            print(chat_id)
+            getChatMember = updater.bot.getChatMember(-1001494317651, chat_id)
+
+            if getChatMember.status == 'left':
+                return True
+            return False
+
+    GettingMember = Getting_member()
+    updater.dispatcher.add_handler(MessageHandler((Filters.all  & (~GettingMember  )), test))
+
 
 
     start_handler = CommandHandler('start', start,run_async=True)
     add_file_handler = CommandHandler('add' , add_file , filters=Filters.chat(ADMIN_ID) & Filters.reply)
     stats_handler = CommandHandler('stats' , stats , filters=Filters.chat(ADMIN_ID))
     broadcast_handler = CommandHandler('broadcast' , broadcast , filters=Filters.chat(ADMIN_ID) & Filters.reply)
-    button_handler = CallbackQueryHandler(button)
+    button_handler = CallbackQueryHandler(button,pattern= '^b.*$')
     dispatcher.add_handler(add_file_handler)
     dispatcher.add_handler(start_handler)
     dispatcher.add_handler(stats_handler)
