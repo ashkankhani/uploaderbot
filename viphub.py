@@ -1,8 +1,9 @@
-from telegram.ext import Updater
+from telegram.ext import Updater,CommandHandler,Filters,CallbackQueryHandler
 import logging
-from telegram.ext import CommandHandler,Filters
+from telegram import InlineKeyboardButton,InlineKeyboardMarkup
 import sqlite3
 from random import sample
+
 
 
 
@@ -12,10 +13,59 @@ from random import sample
 ADMIN_ID = 800882871 #user_id of sender of file and broadcaster
 characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 
+def forward(context,message_id):
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute(f'''select user_id
+    from users
+    ''')
+    user_list = cursor.fetchall()
+    for tup in user_list:
+        context.bot.forward_message(chat_id = tup[0] , from_chat_id = ADMIN_ID , message_id = message_id)
 
+
+
+def copy(context,message_id):
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute(f'''select user_id
+    from users
+    ''')
+    user_list = cursor.fetchall()
+    for tup in user_list:
+        context.bot.copy_message(chat_id = tup[0] , from_chat_id = ADMIN_ID , message_id = message_id)
+
+
+def button(update , context):
+    query = update.callback_query
+    way = query.data
+    message_id = way[1:]
+    
+    if(way[0] == '1'):
+        gozine = 'ارسال همگانی با فوروارد'
+    else:
+        gozine = 'ارسال همگانی عادی'
+
+    query.edit_message_text(text = f'''گزینه انتخابی:{gozine}
+در حال ارسال پیام به کاربران...''')
+    if(way[0] == '1'):
+        forward(context,message_id)
+    if(way[0] == '2'):
+        copy(context,message_id)
+    context.bot.send_message(chat_id = ADMIN_ID , text = 'ارسال با موفقیت انجام شد!')
+
+
+    
 
 def broadcast(update , context):
-    print('broad')
+    keyboard = [
+        [InlineKeyboardButton('ارسال همگانی با فوروارد',callback_data =f'1{update.message.reply_to_message.message_id}')],
+        [InlineKeyboardButton('ارسال همگانی عادی',callback_data = f'2{update.message.reply_to_message.message_id}')],
+
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    update.message.reply_text(text = 'لطفا نوع ارسال را مشخص نمایید:',reply_markup = reply_markup)
+    
     
 
 
@@ -27,7 +77,7 @@ def stats(update,context):
     from users
     ''')
     users_count = (cursor.fetchone())[0]
-    context.bot.send_message(chat_id = update.message.chat.id , text = f'''آمار کاربران ربات:
+    update.message.reply_text(text = f'''آمار کاربران ربات:
 {users_count} نفر میباشد
     
     
@@ -117,25 +167,24 @@ def start(update, context):
         if(file_id):
             send_file(file_id , context)
         else:
-            context.bot.send_message(chat_id=update.effective_chat.id, text="فایل مورد نظر وجود ندارد!")
+            update.message.reply_text(text="فایل مورد نظر وجود ندارد!")
 
 
     else:
-        context.bot.send_message(chat_id=update.effective_chat.id, text="سلام به ربات ما خوش اومدی!")
+        update.message.reply_text(text="سلام به ربات ما خوش اومدی!")
 
 
 def add_file(update , context):
-    if(update.message.reply_to_message):
-        file_code = random_name()
-        message_id = update.message.reply_to_message.message_id
-        add_file_to_db(file_code , message_id)
-        context.bot.send_message(chat_id=ADMIN_ID, text=f'''فایل با موفقیت به ربات افزوده شد!
+    
+    file_code = random_name()
+    message_id = update.message.reply_to_message.message_id
+    add_file_to_db(file_code , message_id)
+    update.message.reply_text(text=f'''فایل با موفقیت به ربات افزوده شد!
 لینک فایل:
 https://t.me/telexviphubbot?start={file_code}        
-        
-        ''')
-    else:
-        context.bot.send_message(chat_id=ADMIN_ID, text="روی فایل مورد نظر ریپلای کنین!")
+    
+    ''')
+    
 
 
 def main():
@@ -150,13 +199,15 @@ def main():
 
 
     start_handler = CommandHandler('start', start,run_async=True)
-    add_file_handler = CommandHandler('add' , add_file , filters=Filters.chat(ADMIN_ID))
+    add_file_handler = CommandHandler('add' , add_file , filters=Filters.chat(ADMIN_ID) & Filters.reply)
     stats_handler = CommandHandler('stats' , stats , filters=Filters.chat(ADMIN_ID))
-    broadcast_handler = CommandHandler('broadcast' , broadcast , filters=Filters.chat(ADMIN_ID))
+    broadcast_handler = CommandHandler('broadcast' , broadcast , filters=Filters.chat(ADMIN_ID) & Filters.reply)
+    button_handler = CallbackQueryHandler(button)
     dispatcher.add_handler(add_file_handler)
     dispatcher.add_handler(start_handler)
     dispatcher.add_handler(stats_handler)
     dispatcher.add_handler(broadcast_handler)
+    dispatcher.add_handler(button_handler)
 
 
 
