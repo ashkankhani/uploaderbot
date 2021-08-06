@@ -1,0 +1,8 @@
+{'update_id': 715687268, 'message': {'message_id': 3, 'date': 1628196057, 'chat': {'id': 800882871, 'type': 'private', 'username': 'drashkankhani', 'first_name': 'Ashkan', 'last_name': 'Khani'
+        }, 'text': '/start', 'entities': [
+            {'type': 'bot_command', 'offset': 0, 'length': 6
+            }
+        ], 'caption_entities': [], 'photo': [], 'new_chat_members': [], 'new_chat_photo': [], 'delete_chat_photo': False, 'group_chat_created': False, 'supergroup_chat_created': False, 'channel_chat_created': False, 'from': {'id': 800882871, 'first_name': 'Ashkan', 'is_bot': False, 'last_name': 'Khani', 'username': 'drashkankhani', 'language_code': 'en'
+        }
+    }
+}
