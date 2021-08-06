@@ -10,6 +10,33 @@ import sqlite3
 
 ADMIN_ID = 800882871 #user_id of sender of file and broadcaster
 
+def user_in_db(user_id):
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute(f'''select id 
+    from users
+    where user_id = {user_id}
+    ''')
+    if(cursor.fetchone()):
+        return True
+    else:
+        return False
+
+
+def add_user_to_db(user_id , fname , lname):
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute(f'''select count(id)
+    from users
+    ''')
+    users_count = (cursor.fetchone())[0]
+    cursor.execute(f'''insert into users
+    values
+    ({users_count + 1} , {user_id} , '{fname}' , '{lname}')
+    ''')
+    connection.commit()
+
+
 
 
 def get_file_id(file_code):
@@ -31,6 +58,10 @@ def send_file(file_id,context):
 
 def start(update, context):
     message_text = update.message.text
+    user_id = update.message.chat.id
+    if not (user_in_db(user_id)):
+        add_user_to_db(user_id , update.message.chat.first_name , update.message.chat.last_name)
+    
     if(len(message_text) > 6):
         #donbale file taraf
         flie_code = message_text[7:]
