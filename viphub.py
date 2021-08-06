@@ -12,20 +12,20 @@ ADMIN_ID = 800882871 #user_id of sender of file and broadcaster
 
 
 
-def membercounter():
-    pass
-
-def file_id(file_code):
+def get_file_id(file_code):
     connection = sqlite3.connect('database.db')
     cursor = connection.cursor()
     cursor.execute(f'''select message_id 
     from links
     where code = '{file_code}'
-    
-    
     ''')
     res = (cursor.fetchone())[0]
     return res
+
+def send_file(file_id,context):
+    context.bot.copy_message(chat_id = ADMIN_ID , from_chat_id = ADMIN_ID , message_id = file_id)
+    
+
 
 
 
@@ -34,7 +34,8 @@ def start(update, context):
     if(len(message_text) > 6):
         #donbale file taraf
         flie_code = message_text[7:]
-        print(file_id(flie_code))
+        file_id = get_file_id(flie_code)
+        send_file(file_id , context)
 
     else:
         context.bot.send_message(chat_id=update.effective_chat.id, text="سلام به ربات ما خوش اومدی!")
