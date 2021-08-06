@@ -1,17 +1,15 @@
-import sqlite3
+from random import sample
 
 
-connection = sqlite3.connect('database.db')
-
-cursor = connection.cursor()
 
 
-cursor.execute('''select id from links
-where message_id = 6
 
 
-''')
-if(cursor.fetchone() != None):
-    res = (cursor.fetchone())[0]
-    print(res)
+ADMIN_ID = 800882871 #user_id of sender of file and broadcaster
+characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 
+def random_name():
+    print(sample(characters , 10))
+
+
+random_name()
