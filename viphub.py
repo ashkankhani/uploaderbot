@@ -13,6 +13,11 @@ from random import sample
 ADMIN_ID = 800882871 #user_id of sender of file and broadcaster
 characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 
+
+def join_channle(user_id):
+    pass
+
+
 def forward(context,message_id):
     connection = sqlite3.connect('database.db')
     cursor = connection.cursor()
@@ -43,8 +48,11 @@ def button(update , context):
     
     if(way[0] == '1'):
         gozine = 'ارسال همگانی با فوروارد'
-    else:
+    elif(way[0] == '2'):
         gozine = 'ارسال همگانی عادی'
+    else:
+        query.edit_message_text(text = 'عملیات لغو شد')
+        return 0
 
     query.edit_message_text(text = f'''گزینه انتخابی:{gozine}
 در حال ارسال پیام به کاربران...''')
@@ -61,6 +69,7 @@ def broadcast(update , context):
     keyboard = [
         [InlineKeyboardButton('ارسال همگانی با فوروارد',callback_data =f'1{update.message.reply_to_message.message_id}')],
         [InlineKeyboardButton('ارسال همگانی عادی',callback_data = f'2{update.message.reply_to_message.message_id}')],
+        [InlineKeyboardButton('لغو عملیات',callback_data = f'3{update.message.reply_to_message.message_id}')],
 
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -162,6 +171,7 @@ def start(update, context):
     
     if(len(message_text) > 6):
         #donbale file taraf
+
         flie_code = message_text[7:]
         file_id = get_file_id(flie_code)
         if(file_id):
