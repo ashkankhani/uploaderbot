@@ -1,20 +1,40 @@
 from telegram.ext import Updater
 import logging
 from telegram.ext import CommandHandler
+import sqlite3
+
+
+
 
 
 
 ADMIN_ID = 800882871 #user_id of sender of file and broadcaster
 
+
+
 def membercounter():
     pass
+
+def file_id(file_code):
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute(f'''select message_id 
+    from links
+    where code = '{file_code}'
+    
+    
+    ''')
+    res = (cursor.fetchone())[0]
+    return res
 
 
 
 def start(update, context):
     message_text = update.message.text
     if(len(message_text) > 6):
-        print(message_text[7:])
+        #donbale file taraf
+        flie_code = message_text[7:]
+        print(file_id(flie_code))
 
     else:
         context.bot.send_message(chat_id=update.effective_chat.id, text="سلام به ربات ما خوش اومدی!")
