@@ -135,9 +135,9 @@ def button(update , context):
 
 def broadcast(update , context):
     keyboard = [
-        [InlineKeyboardButton('ارسال همگانی با فوروارد',callback_data =f'b1{update.message.reply_to_message.message_id}')],
-        [InlineKeyboardButton('ارسال همگانی عادی',callback_data = f'b2{update.message.reply_to_message.message_id}')],
-        [InlineKeyboardButton('لغو عملیات',callback_data = f'b3{update.message.reply_to_message.message_id}')],
+        [InlineKeyboardButton('ارسال همگانی با فوروارد',callback_data =f'b,1,{update.message.reply_to_message.message_id},{update.message.chat.id}')],
+        [InlineKeyboardButton('ارسال همگانی عادی',callback_data = f'b,2,{update.message.reply_to_message.message_id},{update.message.chat.id}')],
+        [InlineKeyboardButton('لغو عملیات',callback_data = f'b,3,{update.message.reply_to_message.message_id},{update.message.chat.id}')],
 
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -162,7 +162,7 @@ def stats(update,context):
     
 
 
-def add_file_to_db(code , message_id):
+def add_file_to_db(code , message_id ,from_admin):
     connection = sqlite3.connect('database.db')
     cursor = connection.cursor()
     cursor.execute(f'''select count(id)
@@ -172,7 +172,7 @@ def add_file_to_db(code , message_id):
 
     cursor.execute(f'''insert into links
     values
-    ({files_count + 1} , '{code}' , {message_id})
+    ({files_count + 1} , '{code}' , {message_id} , {from_admin})
     ''')
     connection.commit()
 
@@ -224,8 +224,8 @@ def get_file_id(file_code):
     else:
         return None
 
-def send_file(file_id,context):
-    context.bot.copy_message(chat_id = ADMIN_ID , from_chat_id = ADMIN_ID , message_id = file_id)
+def send_file(file_id,user_id,context):
+    context.bot.copy_message(chat_id = user_id , from_chat_id = ADMIN_ID , message_id = file_id)
     
 
 
@@ -241,7 +241,7 @@ def start(update, context):
         flie_code = message_text[7:]
         file_id = get_file_id(flie_code)
         if(file_id):
-            send_file(file_id , context)
+            send_file(file_id ,user_id, context)
         else:
             update.message.reply_text(text="فایل مورد نظر وجود ندارد!")
 
@@ -251,7 +251,7 @@ def add_file(update , context):
     
     file_code = random_name()
     message_id = update.message.reply_to_message.message_id
-    add_file_to_db(file_code , message_id)
+    add_file_to_db(file_code , message_id , update.message.chat.id)
     update.message.reply_text(text=f'''فایل با موفقیت به ربات افزوده شد!
 لینک فایل:
 https://t.me/telexviphubbot?start={file_code}        
