@@ -10,8 +10,36 @@ from random import sample
 
 
 
-ADMIN_ID = 800882871 #user_id of sender of file and broadcaster
+ADMIN_ID = 800882871 #sudo user id
 characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+
+def join_settings(update,context):
+    channle_text_list = update.message.reply_to_message.text
+    list_of_channle = channle_list(channle_text_list)
+    add_channle_to_db(list_of_channle)
+    update.message.reply_text('لیست جوین اجباری با موفقیت به روز شد!')
+
+def channle_list(channle_text_list):
+    list_of_channle = channle_text_list.split('\n')
+    for i in range(0,len(list_of_channle)):
+        list_of_channle[i] = int(list_of_channle[i])
+
+    return list_of_channle
+
+
+def add_channle_to_db(list_of_channle):
+    channle_count = len(list_of_channle)
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute(f'''delete 
+    from join_channles
+    ''')
+    for i in range(1 , channle_count + 1):
+        cursor.execute(f'''insert into join_channles
+        values
+        ({i} , {list_of_channle[i - 1]})
+    ''')
+    connection.commit()
 
 
 
@@ -33,8 +61,6 @@ def is_joined(context,user_id):
     return joined
 
 
-def test(update,context):
-    print('join nisti')
 
 
 def forward(context,message_id):
@@ -236,10 +262,12 @@ def main():
             return False
 
     
+
+    
     isredirected = is_redirected()
     
 
-
+    join_handler = CommandHandler('join',join_settings, filters=Filters.chat(ADMIN_ID) & Filters.reply)
     welcomehandler = CommandHandler('start' , welcome , filters=~isredirected)
     start_handler = CommandHandler('start', start,filters = isredirected,run_async=True)
     add_file_handler = CommandHandler('add' , add_file , filters=Filters.chat(ADMIN_ID) & Filters.reply)
@@ -252,6 +280,7 @@ def main():
     dispatcher.add_handler(broadcast_handler)
     dispatcher.add_handler(button_handler)
     dispatcher.add_handler(welcomehandler)
+    dispatcher.add_handler(join_handler)
 
 
 
