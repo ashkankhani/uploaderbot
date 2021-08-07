@@ -225,8 +225,15 @@ def get_file_id(file_code):
     else:
         return None
 
-def send_file(file_id,user_id,context):
-    context.bot.copy_message(chat_id = user_id , from_chat_id = ADMIN_ID , message_id = file_id)
+def send_file(file_id,user_id,file_code,context):
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute(f'''select from_admin 
+    from links
+    where code = '{file_code}'
+    ''')
+    from_admin = (cursor.fetchone())[0]
+    context.bot.copy_message(chat_id = user_id , from_chat_id = from_admin , message_id = file_id)
     
 
 
@@ -239,10 +246,10 @@ def start(update, context):
         add_user_to_db(user_id , update.message.chat.first_name , update.message.chat.last_name)
     
     if(is_joined(context , user_id)):
-        flie_code = message_text[7:]
-        file_id = get_file_id(flie_code)
+        file_code = message_text[7:]
+        file_id = get_file_id(file_code)
         if(file_id):
-            send_file(file_id ,user_id, context)
+            send_file(file_id ,user_id, file_code ,context)
         else:
             update.message.reply_text(text="فایل مورد نظر وجود ندارد!")
 
