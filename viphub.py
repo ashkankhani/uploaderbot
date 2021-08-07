@@ -13,18 +13,41 @@ from random import sample
 ADMIN_ID = 800882871 #sudo user id
 characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 
+
+def admin_settings(update,context):
+    admin_text_list = update.message.reply_to_message.text
+    list_of_admin = list_maker(admin_text_list)
+    add_admin_to_db(list_of_admin)
+    update.message.reply_text('لیست ادمین با موفقیت به روز شد!')
+
+def add_admin_to_db(list_of_admin):
+    admin_count = len(list_of_admin)
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute(f'''delete 
+    from admins
+    ''')
+    for i in range(1 , admin_count + 1):
+        cursor.execute(f'''insert into admins
+        values
+        ({i} , {list_of_admin[i - 1]})
+    ''')
+    connection.commit()
+
+
+
 def join_settings(update,context):
     channle_text_list = update.message.reply_to_message.text
-    list_of_channle = channle_list(channle_text_list)
+    list_of_channle = list_maker(channle_text_list)
     add_channle_to_db(list_of_channle)
     update.message.reply_text('لیست جوین اجباری با موفقیت به روز شد!')
 
-def channle_list(channle_text_list):
-    list_of_channle = channle_text_list.split('\n')
-    for i in range(0,len(list_of_channle)):
-        list_of_channle[i] = int(list_of_channle[i])
+def list_maker(channle_text_list):
+    list_of_ids = channle_text_list.split('\n')
+    for i in range(0,len(list_of_ids)):
+        list_of_ids[i] = int(list_of_ids[i])
 
-    return list_of_channle
+    return list_of_ids
 
 
 def add_channle_to_db(list_of_channle):
@@ -261,18 +284,40 @@ def main():
                 return True
             return False
 
+    class is_adminator(UpdateFilter):
+        def filter(self , update):
+            user_id = update.message.chat.id
+            if(user_id == ADMIN_ID):
+                return True
+            is_admin = False
+            connection = sqlite3.connect('database.db')
+            cursor = connection.cursor()
+            cursor.execute(f'''select admin_id
+            from admins
+            ''')
+            admin_list = cursor.fetchall()
+
+            for tup in admin_list:
+                if(user_id == tup[0]):
+                    is_admin = True
+                    break
+            
+            return is_admin
+
+
     
 
     
     isredirected = is_redirected()
+    isadminator = is_adminator()
     
-
-    join_handler = CommandHandler('join',join_settings, filters=Filters.chat(ADMIN_ID) & Filters.reply)
+    admin_handler = CommandHandler('setadmin' , admin_settings , filters=Filters.chat(ADMIN_ID))
+    join_handler = CommandHandler('join',join_settings, filters=isadminator & Filters.reply)
     welcomehandler = CommandHandler('start' , welcome , filters=~isredirected)
     start_handler = CommandHandler('start', start,filters = isredirected,run_async=True)
-    add_file_handler = CommandHandler('add' , add_file , filters=Filters.chat(ADMIN_ID) & Filters.reply)
-    stats_handler = CommandHandler('stats' , stats , filters=Filters.chat(ADMIN_ID))
-    broadcast_handler = CommandHandler('broadcast' , broadcast , filters=Filters.chat(ADMIN_ID) & Filters.reply)
+    add_file_handler = CommandHandler('add' , add_file , filters=isadminator & Filters.reply)
+    stats_handler = CommandHandler('stats' , stats , filters=isadminator)
+    broadcast_handler = CommandHandler('broadcast' , broadcast , filters=isadminator & Filters.reply)
     button_handler = CallbackQueryHandler(button,pattern= '^b.*$')
     dispatcher.add_handler(add_file_handler)
     dispatcher.add_handler(start_handler)
@@ -281,6 +326,7 @@ def main():
     dispatcher.add_handler(button_handler)
     dispatcher.add_handler(welcomehandler)
     dispatcher.add_handler(join_handler)
+    dispatcher.add_handler(admin_handler)
 
 
 
