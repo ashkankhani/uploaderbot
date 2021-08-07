@@ -17,16 +17,21 @@ characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 
 
 
-#def is_joined(user_id):
-  #  connection = sqlite3.connect('database.db')
-   # cursor = connection.cursor()
-  #  cursor.execute(f'''select channle_id
-  #  from join_channles
-   # ''')
-   # channle_list = cursor.fetchall()
-   # for tup in channle_list:
-    #    pass
- #
+def is_joined(context,user_id):
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute(f'''select channle_id
+    from join_channles
+    ''')
+    channle_list = cursor.fetchall()
+    joined = True
+    for tup in channle_list:
+        getChatMember = context.bot.getChatMember(chat_id = tup[0], user_id = user_id)
+        if getChatMember.status == 'left':
+            joined = False
+            break
+    return joined
+
 
 def test(update,context):
     print('join nisti')
@@ -183,9 +188,7 @@ def start(update, context):
     if not (user_in_db(user_id)):
         add_user_to_db(user_id , update.message.chat.first_name , update.message.chat.last_name)
     
-    if(len(message_text) > 6):
-        #donbale file taraf
-
+    if(is_joined(context , user_id)):
         flie_code = message_text[7:]
         file_id = get_file_id(flie_code)
         if(file_id):
@@ -193,9 +196,6 @@ def start(update, context):
         else:
             update.message.reply_text(text="فایل مورد نظر وجود ندارد!")
 
-
-    else:
-        update.message.reply_text(text="سلام به ربات ما خوش اومدی!")
 
 
 def add_file(update , context):
@@ -208,6 +208,14 @@ def add_file(update , context):
 https://t.me/telexviphubbot?start={file_code}        
     
     ''')
+
+def welcome(update , context):
+    user_id = update.message.chat.id
+    update.message.reply_text("سلام به ربات ما خوش اومدی!")
+    if not (user_in_db(user_id)):
+        add_user_to_db(user_id , update.message.chat.first_name , update.message.chat.last_name)
+    
+
     
 
 
@@ -220,23 +228,20 @@ def main():
 
     dispatcher = updater.dispatcher
 
-    class Getting_member(UpdateFilter):
-        def filter(self, update):
 
-            chat_id = update.effective_chat.id
-            print(chat_id)
-            getChatMember = updater.bot.getChatMember(-1001494317651, chat_id)
-
-            if getChatMember.status == 'left':
+    class is_redirected(UpdateFilter):
+        def filter(self , update):
+            if(len(update.message.text) > 6):
                 return True
             return False
 
-    GettingMember = Getting_member()
-    updater.dispatcher.add_handler(MessageHandler((Filters.all  & (~GettingMember  )), test))
+    
+    isredirected = is_redirected()
+    
 
 
-
-    start_handler = CommandHandler('start', start,run_async=True)
+    welcomehandler = CommandHandler('start' , welcome , filters=~isredirected)
+    start_handler = CommandHandler('start', start,filters = isredirected,run_async=True)
     add_file_handler = CommandHandler('add' , add_file , filters=Filters.chat(ADMIN_ID) & Filters.reply)
     stats_handler = CommandHandler('stats' , stats , filters=Filters.chat(ADMIN_ID))
     broadcast_handler = CommandHandler('broadcast' , broadcast , filters=Filters.chat(ADMIN_ID) & Filters.reply)
@@ -246,6 +251,7 @@ def main():
     dispatcher.add_handler(stats_handler)
     dispatcher.add_handler(broadcast_handler)
     dispatcher.add_handler(button_handler)
+    dispatcher.add_handler(welcomehandler)
 
 
 
