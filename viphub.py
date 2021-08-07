@@ -32,7 +32,6 @@ def test(update,context):
     print('join nisti')
 
 
-
 def forward(context,message_id):
     connection = sqlite3.connect('database.db')
     cursor = connection.cursor()
