@@ -86,7 +86,7 @@ def is_joined(context,user_id):
 
 
 
-def forward(context,message_id):
+def forward(context,message_id,admin_id):
     connection = sqlite3.connect('database.db')
     cursor = connection.cursor()
     cursor.execute(f'''select user_id
@@ -94,11 +94,11 @@ def forward(context,message_id):
     ''')
     user_list = cursor.fetchall()
     for tup in user_list:
-        context.bot.forward_message(chat_id = tup[0] , from_chat_id = ADMIN_ID , message_id = message_id)
+        context.bot.forward_message(chat_id = tup[0] , from_chat_id = admin_id , message_id = message_id)
 
 
 
-def copy(context,message_id):
+def copy(context,message_id,admin_id):
     connection = sqlite3.connect('database.db')
     cursor = connection.cursor()
     cursor.execute(f'''select user_id
@@ -106,13 +106,14 @@ def copy(context,message_id):
     ''')
     user_list = cursor.fetchall()
     for tup in user_list:
-        context.bot.copy_message(chat_id = tup[0] , from_chat_id = ADMIN_ID , message_id = message_id)
+        context.bot.copy_message(chat_id = tup[0] , from_chat_id = admin_id , message_id = message_id)
 
 
 def button(update , context):
     query = update.callback_query
-    way = query.data
-    message_id = way[2:]
+    way = (query.data).split(',')
+    message_id = way[2]
+    admin_id = way[3]
     
     if(way[1] == '1'):
         gozine = 'ارسال همگانی با فوروارد'
@@ -125,10 +126,10 @@ def button(update , context):
     query.edit_message_text(text = f'''گزینه انتخابی:{gozine}
 در حال ارسال پیام به کاربران...''')
     if(way[1] == '1'):
-        forward(context,message_id)
+        forward(context,message_id,admin_id)
     if(way[1] == '2'):
-        copy(context,message_id)
-    context.bot.send_message(chat_id = ADMIN_ID , text = 'ارسال با موفقیت انجام شد!')
+        copy(context,message_id,admin_id)
+    context.bot.send_message(chat_id = admin_id , text = 'ارسال با موفقیت انجام شد!')
 
 
     
