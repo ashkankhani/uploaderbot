@@ -32,7 +32,38 @@ def admin_help(update,context):
 /deleteon جهت روشن کردن حذف خودکار فایل پس از کذشت یک دقیقه بعد از ارسال
 /deleteoff جهت خاموش کردن حذف خودکار فایل پس از کذشت یک دقیقه بعد از ارسال
 /backup جهت دریافت فایل دیتابیس ربات
+/joinon جهت روشن کردن جوین اجباری
+/joinoff جهت خاموش کردن جوین اجباری
 ''')
+
+
+def is_force_join_on():
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute(f'''select force_join 
+    from settings
+    ''')
+    res = (cursor.fetchone())[0]
+    return res
+
+
+def force_join_on(update,context):
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute(f'''update settings
+    set force_join = 1
+    ''')
+    connection.commit()
+    update.message.reply_text('جوین اجباری با موفقیت فعال شد')
+
+def force_join_off(update,context):
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute(f'''update settings
+    set force_join = 0
+    ''')
+    connection.commit()
+    update.message.reply_text('جوین اجباری با موفقیت غیر فعال شد')
 
 def auto_delete_on(update,context):
     connection = sqlite3.connect('database.db')
@@ -355,7 +386,7 @@ def start(update, context):
         add_user_to_db(user_id , update.message.chat.first_name , update.message.chat.last_name)
     file_code = message_text[7:]
     file_id = get_file_id(file_code)
-    if(is_joined(context , user_id)):
+    if(not(is_force_join_on() and (not is_joined(context , user_id)))):
         if(file_id):
             send_file(file_id ,user_id, file_code ,context)
         else:
@@ -444,6 +475,8 @@ def main():
     auto_delete_off_handler = CommandHandler('deleteoff' , auto_delete_off , filters=isadminator,run_async=True)
     button_handler = CallbackQueryHandler(button,pattern= '^b.*$',run_async=True)
     button_joined_handler = CallbackQueryHandler(joined_button,pattern= '^j.*$',run_async=True)
+    force_join_on_handler = CommandHandler('joinon' , force_join_on , filters=isadminator,run_async=True)
+    force_join_off_handler = CommandHandler('joinoff' , force_join_off , filters=isadminator,run_async=True)
     dispatcher.add_handler(add_file_handler)
     dispatcher.add_handler(start_handler)
     dispatcher.add_handler(stats_handler)
@@ -457,6 +490,9 @@ def main():
     dispatcher.add_handler(auto_delete_off_handler)
     dispatcher.add_handler(help_handler)
     dispatcher.add_handler(backup_data_handler)
+    dispatcher.add_handler(force_join_on_handler)
+    dispatcher.add_handler(force_join_off_handler)
+
     
 
 
