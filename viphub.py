@@ -12,7 +12,7 @@ from telegram import Bot
 
 
 
-ADMIN_ID = 800882871 #sudo user id
+ADMIN_ID = 365527971 #sudo user id
 characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 
 
@@ -337,7 +337,7 @@ def main():
 
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                         level=logging.INFO)
-    updater = Updater(token='1917460438:AAHRJ3v45s4Pcs_wvlv-Hw64w8_Maj9kTOc', use_context=True,workers=200)
+    updater = Updater(token='1936804982:AAEjadVwiSQ6IdhEWSw7T34gJHDj4PRwbeU', use_context=True,workers=200)
 
 
     dispatcher = updater.dispatcher
