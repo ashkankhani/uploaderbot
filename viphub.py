@@ -4,6 +4,9 @@ from telegram import InlineKeyboardButton,InlineKeyboardMarkup
 import sqlite3
 from random import sample
 from time import sleep
+from telegram import User
+
+from telegram.constants import PARSEMODE_MARKDOWN_V2
 
 
 
@@ -412,7 +415,9 @@ https://t.me/Yahodupload_bot?start={file_code}
 
 def welcome(update , context):
     user_id = update.message.chat.id
-    update.message.reply_text("سلام به ربات ما خوش اومدی!")
+    user_mention = User(user_id ,first_name = update.message.chat.first_name,is_bot = False).mention_markdown_v2()
+    update.message.reply_text(f'''سلام {user_mention}
+دوست عزیزم به ربات یهود 🐕  آپلودر خوش آمدید 🌺''',parse_mode =PARSEMODE_MARKDOWN_V2)
     if not (user_in_db(user_id)):
         add_user_to_db(user_id , update.message.chat.first_name , update.message.chat.last_name)
     
