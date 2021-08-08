@@ -3,6 +3,8 @@ import logging
 from telegram import InlineKeyboardButton,InlineKeyboardMarkup
 import sqlite3
 from random import sample
+from telegram import Bot
+
 
 
 
@@ -226,6 +228,7 @@ def get_file_id(file_code):
         return None
 
 def send_file(file_id,user_id,file_code,context):
+    print(type(file_id) , type(user_id) , file_code)
     connection = sqlite3.connect('database.db')
     cursor = connection.cursor()
     cursor.execute(f'''select from_admin 
@@ -234,9 +237,26 @@ def send_file(file_id,user_id,file_code,context):
     ''')
     from_admin = (cursor.fetchone())[0]
     context.bot.copy_message(chat_id = user_id , from_chat_id = from_admin , message_id = file_id)
+
+
+def joined_button(update,context):
+    query = update.callback_query
+    way = (query.data).split(',')
+    j , file_id , file_code , user_id = way
+    if(not is_joined(context,user_id)):
+        context.bot.send_message(chat_id = user_id , text = 'شما عضو چنل نیستید')
+        return 0
+
+    if(file_id != 'None'):
+        send_file(file_id ,user_id, file_code ,context)
+    else:
+        context.bot.send_message(chat_id = user_id , text = 'فایل مورد نظر یافت نشد!')
+
+
+    
     
 
-def join_to_our_channle(list_of_invite_links,update):
+def join_to_our_channle(list_of_invite_links,update,file_id,user_id,file_code):
     shomaresh = ['اول','دوم','سوم','چهارم','پنجم']
     keyboard = [
 
@@ -245,7 +265,7 @@ def join_to_our_channle(list_of_invite_links,update):
         channle_button_base = [InlineKeyboardButton(f'عضویت در کانال {shomaresh[i]}',url = list_of_invite_links[i])]
         keyboard.append(channle_button_base)
 
-    keyboard.append([InlineKeyboardButton('عضو شدم',callback_data =f'j')])
+    keyboard.append([InlineKeyboardButton('عضو شدم',callback_data =f'j,{file_id},{file_code},{user_id}')])
 
     
     
@@ -277,10 +297,9 @@ def start(update, context):
     user_id = update.message.chat.id
     if not (user_in_db(user_id)):
         add_user_to_db(user_id , update.message.chat.first_name , update.message.chat.last_name)
-    
+    file_code = message_text[7:]
+    file_id = get_file_id(file_code)
     if(is_joined(context , user_id)):
-        file_code = message_text[7:]
-        file_id = get_file_id(file_code)
         if(file_id):
             send_file(file_id ,user_id, file_code ,context)
         else:
@@ -288,7 +307,7 @@ def start(update, context):
 
     else:
         list_of_invite_links = convert_id_to_invite(context)
-        join_to_our_channle(list_of_invite_links,update)
+        join_to_our_channle(list_of_invite_links,update,file_id,user_id,file_code)
         
 
 
@@ -365,6 +384,7 @@ def main():
     stats_handler = CommandHandler('stats' , stats , filters=isadminator)
     broadcast_handler = CommandHandler('broadcast' , broadcast , filters=isadminator & Filters.reply)
     button_handler = CallbackQueryHandler(button,pattern= '^b.*$')
+    button_joined_handler = CallbackQueryHandler(joined_button,pattern= '^j.*$')
     dispatcher.add_handler(add_file_handler)
     dispatcher.add_handler(start_handler)
     dispatcher.add_handler(stats_handler)
@@ -373,6 +393,8 @@ def main():
     dispatcher.add_handler(welcomehandler)
     dispatcher.add_handler(join_handler)
     dispatcher.add_handler(admin_handler)
+    dispatcher.add_handler(button_joined_handler)
+
 
 
 
