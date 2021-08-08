@@ -236,6 +236,39 @@ def send_file(file_id,user_id,file_code,context):
     context.bot.copy_message(chat_id = user_id , from_chat_id = from_admin , message_id = file_id)
     
 
+def join_to_our_channle(list_of_invite_links,update):
+    shomaresh = ['اول','دوم','سوم','چهارم','پنجم']
+    keyboard = [
+
+    ]
+    for i in range(0,len(list_of_invite_links)):
+        channle_button_base = [InlineKeyboardButton(f'عضویت در کانال {shomaresh[i]}',url = list_of_invite_links[i])]
+        keyboard.append(channle_button_base)
+
+    keyboard.append([InlineKeyboardButton('عضو شدم',callback_data =f'j')])
+
+    
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    update.message.reply_text(text = 'ابتدا وارد کانال های زیر شده و سپس روی دکمه عضو شدم کلیک کنید:',reply_markup = reply_markup)
+
+def convert_id_to_invite(context):
+    channle_links = []
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute(f'''select channle_id 
+    from join_channles
+    ''')
+    channle_ids = cursor.fetchall()
+
+    for channle_id in channle_ids:
+        channle_links.append((context.bot.getChat(channle_id[0])).invite_link)  
+
+
+    return channle_links
+        
+
+    
 
 
 
@@ -252,6 +285,11 @@ def start(update, context):
             send_file(file_id ,user_id, file_code ,context)
         else:
             update.message.reply_text(text="فایل مورد نظر وجود ندارد!")
+
+    else:
+        list_of_invite_links = convert_id_to_invite(context)
+        join_to_our_channle(list_of_invite_links,update)
+        
 
 
 
