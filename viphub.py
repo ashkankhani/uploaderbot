@@ -3,7 +3,7 @@ import logging
 from telegram import InlineKeyboardButton,InlineKeyboardMarkup
 import sqlite3
 from random import sample
-from telegram import Bot
+from time import sleep
 
 
 
@@ -14,6 +14,55 @@ from telegram import Bot
 
 ADMIN_ID = 365527971 #sudo user id
 characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+
+
+def backup_data(update,context):
+    admin_id = update.message.chat.id
+    context.bot.send_document(chat_id = admin_id , document = open('database.db', 'rb') , filename = 'database.db')
+
+
+def admin_help(update,context):
+    update.message.reply_text('''دستورات ربات:
+/help : جهت راهنمایی و نمایش دستورات
+/setadmin [with reply] : جهت ادمین کردن لیستی از آیدی های عددی
+/join [with reply] : جهت اضافه کردن لیستی از آیدی های عددی کانال ها به جوین اجباری
+/add [with reply] : جهت اضافه کردن فایل مورد نظر و ذخیره سازی آن
+/stats : جهت آمارگیری
+/boradcast [with reply] : جهت ارسال پیام همگانی
+/deleteon جهت روشن کردن حذف خودکار فایل پس از کذشت یک دقیقه بعد از ارسال
+/deleteoff جهت خاموش کردن حذف خودکار فایل پس از کذشت یک دقیقه بعد از ارسال
+/backup جهت دریافت فایل دیتابیس ربات
+''')
+
+def auto_delete_on(update,context):
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute(f'''update settings
+    set auto_delete = 1
+    ''')
+    connection.commit()
+    update.message.reply_text('حذف خودکار با موفقیت فعال شد')
+
+def auto_delete_off(update,context):
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute(f'''update settings
+    set auto_delete = 0
+    ''')
+    connection.commit()
+    update.message.reply_text('حذف خودکار با موفقیت غیر فعال شد')
+
+def is_auto_delete_on():
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute(f'''select auto_delete 
+    from settings
+    ''')
+    res = (cursor.fetchone())[0]
+    return res
+
+
+
 
 
 def admin_settings(update,context):
@@ -42,7 +91,7 @@ def join_settings(update,context):
     channle_text_list = update.message.reply_to_message.text
     list_of_channle = list_maker(channle_text_list)
     add_channle_to_db(list_of_channle)
-    update.message.reply_text('لیست جوین اجباری با موفقیت به روز شد!')
+    update.message.reply_text('لیست جوین اجباری با موفقیت به روز شد!\nتوجه کنید که ربات حتما باید در کانال مربوطه ادمین شود و در غیر اینصورت با خطا مواجه میشوید')
 
 def list_maker(channle_text_list):
     list_of_ids = channle_text_list.split('\n')
@@ -228,7 +277,6 @@ def get_file_id(file_code):
         return None
 
 def send_file(file_id,user_id,file_code,context):
-    print(type(file_id) , type(user_id) , file_code)
     connection = sqlite3.connect('database.db')
     cursor = connection.cursor()
     cursor.execute(f'''select from_admin 
@@ -236,13 +284,21 @@ def send_file(file_id,user_id,file_code,context):
     where code = '{file_code}'
     ''')
     from_admin = (cursor.fetchone())[0]
-    context.bot.copy_message(chat_id = user_id , from_chat_id = from_admin , message_id = file_id)
+    sended_file = context.bot.copy_message(chat_id = user_id , from_chat_id = from_admin , message_id = file_id)
+    if(is_auto_delete_on()):
+        context.bot.send_message(chat_id = user_id , text = 'این فایل بعد از 60 ثانیه حذف میشود.پس قبل از حذف آن را ذخیره کنید')
+        sleep(60)
+        context.bot.delete_message(chat_id = user_id , message_id = sended_file.message_id)
+    
+    
+    
+    
 
 
 def joined_button(update,context):
     query = update.callback_query
-    way = (query.data).split(',')
-    j , file_id , file_code , user_id = way
+    way = ((query.data).split(','))[1:]
+    file_id , file_code , user_id = way
     if(not is_joined(context,user_id)):
         context.bot.send_message(chat_id = user_id , text = 'شما عضو چنل نیستید')
         return 0
@@ -375,16 +431,19 @@ def main():
     
     isredirected = is_redirected()
     isadminator = is_adminator()
-    
-    admin_handler = CommandHandler('setadmin' , admin_settings , filters=Filters.chat(ADMIN_ID))
-    join_handler = CommandHandler('join',join_settings, filters=isadminator & Filters.reply)
-    welcomehandler = CommandHandler('start' , welcome , filters=~isredirected)
+    help_handler = CommandHandler('help' , admin_help , filters=isadminator,run_async=True)
+    backup_data_handler = CommandHandler('backup' , backup_data , filters=isadminator,run_async=True)
+    admin_handler = CommandHandler('setadmin' , admin_settings , filters=Filters.chat(ADMIN_ID),run_async=True)
+    join_handler = CommandHandler('join',join_settings, filters=isadminator & Filters.reply,run_async=True)
+    welcomehandler = CommandHandler('start' , welcome , filters=~isredirected,run_async=True)
     start_handler = CommandHandler('start', start,filters = isredirected,run_async=True)
-    add_file_handler = CommandHandler('add' , add_file , filters=isadminator & Filters.reply)
-    stats_handler = CommandHandler('stats' , stats , filters=isadminator)
-    broadcast_handler = CommandHandler('broadcast' , broadcast , filters=isadminator & Filters.reply)
-    button_handler = CallbackQueryHandler(button,pattern= '^b.*$')
-    button_joined_handler = CallbackQueryHandler(joined_button,pattern= '^j.*$')
+    add_file_handler = CommandHandler('add' , add_file , filters=isadminator & Filters.reply,run_async=True)
+    stats_handler = CommandHandler('stats' , stats , filters=isadminator,run_async=True)
+    broadcast_handler = CommandHandler('broadcast' , broadcast , filters=isadminator & Filters.reply,run_async=True)
+    auto_delete_on_handler = CommandHandler('deleteon' , auto_delete_on , filters=isadminator,run_async=True)
+    auto_delete_off_handler = CommandHandler('deleteoff' , auto_delete_off , filters=isadminator,run_async=True)
+    button_handler = CallbackQueryHandler(button,pattern= '^b.*$',run_async=True)
+    button_joined_handler = CallbackQueryHandler(joined_button,pattern= '^j.*$',run_async=True)
     dispatcher.add_handler(add_file_handler)
     dispatcher.add_handler(start_handler)
     dispatcher.add_handler(stats_handler)
@@ -394,6 +453,11 @@ def main():
     dispatcher.add_handler(join_handler)
     dispatcher.add_handler(admin_handler)
     dispatcher.add_handler(button_joined_handler)
+    dispatcher.add_handler(auto_delete_on_handler)
+    dispatcher.add_handler(auto_delete_off_handler)
+    dispatcher.add_handler(help_handler)
+    dispatcher.add_handler(backup_data_handler)
+    
 
 
 
