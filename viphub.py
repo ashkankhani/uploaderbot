@@ -319,7 +319,7 @@ def add_file(update , context):
     add_file_to_db(file_code , message_id , update.message.chat.id)
     update.message.reply_text(text=f'''فایل با موفقیت به ربات افزوده شد!
 لینک فایل:
-https://t.me/telexviphubbot?start={file_code}        
+https://t.me/Yahodupload_bot?start={file_code}        
     
     ''')
 
