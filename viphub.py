@@ -28,7 +28,7 @@ def admin_help(update,context):
     update.message.reply_text('''دستورات ربات:
 /help : جهت راهنمایی و نمایش دستورات
 /setadmin [with reply] : جهت ادمین کردن لیستی از آیدی های عددی
-/join [with reply] : جهت اضافه کردن لیستی از آیدی های عددی کانال ها به جوین اجباری
+/setjoin [with reply] : جهت اضافه کردن لیستی از آیدی های عددی کانال ها به جوین اجباری
 /add [with reply] : جهت اضافه کردن فایل مورد نظر و ذخیره سازی آن
 /stats : جهت آمارگیری
 /boradcast [with reply] : جهت ارسال پیام همگانی
@@ -37,7 +37,29 @@ def admin_help(update,context):
 /backup جهت دریافت فایل دیتابیس ربات
 /joinon جهت روشن کردن جوین اجباری
 /joinoff جهت خاموش کردن جوین اجباری
+/on روشن کردن ربات
+/off خاموش کردن ربات
+/setwelcome [with reply] جهت تنظیم پیام خوش آمد گویی
 ''')
+
+
+def on(update , context):
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute('''update settings
+    set power = 1
+    ''')
+    connection.commit()
+    update.message.reply_text('ربات با موفقيت روشن شد!')
+
+def off(update , context):
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute('''update settings
+    set power = 0
+    ''')
+    connection.commit()
+    update.message.reply_text('ربات با موفقيت خاموش شد!')
 
 
 def is_force_join_on():
@@ -413,13 +435,36 @@ https://t.me/Yahodupload_bot?start={file_code}
     
     ''')
 
+def get_welcome_text():
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+    cursor.execute('''select welcome_text
+    from settings
+    ''')
+    welcome_text = (cursor.fetchone())[0]
+    return welcome_text
+
 def welcome(update , context):
     user_id = update.message.chat.id
     user_mention = User(user_id ,first_name = update.message.chat.first_name,is_bot = False).mention_markdown_v2()
-    update.message.reply_text(f'''سلام {user_mention}
-دوست عزیزم به ربات یهود 🐕  آپلودر خوش آمدید 🌺''',parse_mode =PARSEMODE_MARKDOWN_V2)
+    welcome_text = get_welcome_text()
+    full_welcome_text = welcome_text.replace('MENTION' , user_mention)
+    update.message.reply_text(full_welcome_text,parse_mode =PARSEMODE_MARKDOWN_V2)
     if not (user_in_db(user_id)):
         add_user_to_db(user_id , update.message.chat.first_name , update.message.chat.last_name)
+
+
+def set_welcome_text(update,context):
+    connection = sqlite3.connect('database.db')
+    cursor = connection.cursor()
+    welcome_text = update.message.reply_to_message.text
+    cursor.execute(f'''update settings
+    set welcome_text = '{welcome_text}'
+    ''')
+    connection.commit()
+    update.message.reply_text('متن خوش آمد گویی ربات با موفقیت به روز شد!')
+
+
     
 
     
@@ -433,6 +478,8 @@ def main():
 
 
     dispatcher = updater.dispatcher
+
+    
 
 
     class is_redirected(UpdateFilter):
@@ -461,18 +508,33 @@ def main():
             
             return is_admin
 
+    class is_on(UpdateFilter):
+        def filter(self , update):
+            connection = sqlite3.connect('database.db')
+            cursor = connection.cursor()
+            cursor.execute(f'''select power
+            from settings
+            ''')
+            res = (cursor.fetchone())[0]
+            return res
+
+
 
     
 
     
     isredirected = is_redirected()
     isadminator = is_adminator()
+    ison = is_on()
+    set_welcome_text_handler = CommandHandler('setwelcome' , set_welcome_text,filters=isadminator & Filters.reply,run_async=True)
+    on_handler = CommandHandler('on' , on,filters=isadminator,run_async=True)
+    off_handler = CommandHandler('off' , off,filters=isadminator,run_async=True)
     help_handler = CommandHandler('help' , admin_help , filters=isadminator,run_async=True)
     backup_data_handler = CommandHandler('backup' , backup_data , filters=isadminator,run_async=True)
     admin_handler = CommandHandler('setadmin' , admin_settings , filters=Filters.chat(ADMIN_ID),run_async=True)
-    join_handler = CommandHandler('join',join_settings, filters=isadminator & Filters.reply,run_async=True)
-    welcomehandler = CommandHandler('start' , welcome , filters=~isredirected,run_async=True)
-    start_handler = CommandHandler('start', start,filters = isredirected,run_async=True)
+    join_handler = CommandHandler('setjoin',join_settings, filters=isadminator & Filters.reply,run_async=True)
+    welcomehandler = CommandHandler('start' , welcome , filters=ison & ~isredirected,run_async=True)
+    start_handler = CommandHandler('start', start,filters = ison & isredirected,run_async=True)
     add_file_handler = CommandHandler('add' , add_file , filters=isadminator & Filters.reply,run_async=True)
     stats_handler = CommandHandler('stats' , stats , filters=isadminator,run_async=True)
     broadcast_handler = CommandHandler('broadcast' , broadcast , filters=isadminator & Filters.reply,run_async=True)
@@ -497,6 +559,9 @@ def main():
     dispatcher.add_handler(backup_data_handler)
     dispatcher.add_handler(force_join_on_handler)
     dispatcher.add_handler(force_join_off_handler)
+    dispatcher.add_handler(on_handler)
+    dispatcher.add_handler(off_handler)
+    dispatcher.add_handler(set_welcome_text_handler)
 
     
 
