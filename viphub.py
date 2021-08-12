@@ -5,19 +5,26 @@ import sqlite3
 from random import sample
 from time import sleep
 from telegram import User
+from telegram import Bot
 
 from telegram.constants import PARSEMODE_MARKDOWN_V2
 
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 
 
 
 
+vip_bot = Bot('1936804982:AAEjadVwiSQ6IdhEWSw7T34gJHDj4PRwbeU')
 
 
 ADMIN_ID = 365527971 #sudo user id
 characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 
+
+def auto_backup():
+    print('test')
+    #vip_bot.send_document(chat_id = 800882871 , document = open('database.db', 'rb') , filename = 'database.db')
 
 def backup_data(update,context):
     admin_id = update.message.chat.id
@@ -473,6 +480,9 @@ def set_welcome_text(update,context):
 
 
 def main():
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(auto_backup, 'interval', seconds=3)
+    scheduler.start()
 
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                         level=logging.INFO)
@@ -480,6 +490,8 @@ def main():
 
 
     dispatcher = updater.dispatcher
+
+    
 
     
 
