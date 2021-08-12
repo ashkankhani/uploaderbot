@@ -344,7 +344,7 @@ def send_file(file_id,user_id,file_code,context):
     from_admin = (cursor.fetchone())[0]
     sended_file = context.bot.copy_message(chat_id = user_id , from_chat_id = from_admin , message_id = file_id)
     if(is_auto_delete_on()):
-        context.bot.send_message(chat_id = user_id , text = 'این فایل بعد از 60 ثانیه حذف میشود.پس قبل از حذف آن را ذخیره کنید')
+        context.bot.send_message(chat_id = user_id , text = 'این فایل بعد از 20 دقيقه حذف میشود.پس قبل از حذف آن را ذخیره کنید')
         sleep(60 * 20)
         context.bot.delete_message(chat_id = user_id , message_id = sended_file.message_id)
     
