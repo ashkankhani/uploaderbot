@@ -310,6 +310,8 @@ def add_user_to_db(user_id , fname , lname):
     from users
     ''')
     users_count = (cursor.fetchone())[0]
+    if(users_count == None):
+        users_count = 0
     cursor.execute(f'''insert into users
     values
     ({users_count + 1} , {user_id} , '{fname}' , '{lname}')
