@@ -7,9 +7,10 @@ from time import sleep
 from telegram import User
 from telegram import Bot
 
+
 from telegram.constants import PARSEMODE_MARKDOWN_V2
 
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
 
 
 
@@ -23,8 +24,7 @@ characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 
 
 def auto_backup():
-    print('test')
-    #vip_bot.send_document(chat_id = 800882871 , document = open('database.db', 'rb') , filename = 'database.db')
+    vip_bot.send_document(chat_id = 800882871 , document = open('database.db', 'rb') , filename = 'database.db')
 
 def backup_data(update,context):
     admin_id = update.message.chat.id
@@ -480,9 +480,7 @@ def set_welcome_text(update,context):
 
 
 def main():
-    scheduler = AsyncIOScheduler()
-    scheduler.add_job(auto_backup, 'interval', seconds=3)
-    scheduler.start()
+  
 
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                         level=logging.INFO)
@@ -490,11 +488,6 @@ def main():
 
 
     dispatcher = updater.dispatcher
-
-    
-
-    
-
 
     class is_redirected(UpdateFilter):
         def filter(self , update):
@@ -577,12 +570,15 @@ def main():
     dispatcher.add_handler(off_handler)
     dispatcher.add_handler(set_welcome_text_handler)
 
+
+
     
 
 
 
 
     updater.start_polling()
+    updater.idle()
 
 if(__name__ == '__main__'):
     main()
