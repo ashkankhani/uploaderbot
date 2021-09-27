@@ -57,6 +57,7 @@ def on(update , context):
     set power = 1
     ''')
     connection.commit()
+    connection.close()
     update.message.reply_text('ربات با موفقيت روشن شد!')
 
 def off(update , context):
@@ -66,6 +67,7 @@ def off(update , context):
     set power = 0
     ''')
     connection.commit()
+    connection.close()
     update.message.reply_text('ربات با موفقيت خاموش شد!')
 
 
@@ -86,6 +88,7 @@ def force_join_on(update,context):
     set force_join = 1
     ''')
     connection.commit()
+    connection.close()
     update.message.reply_text('جوین اجباری با موفقیت فعال شد')
 
 def force_join_off(update,context):
@@ -95,6 +98,7 @@ def force_join_off(update,context):
     set force_join = 0
     ''')
     connection.commit()
+    connection.close()
     update.message.reply_text('جوین اجباری با موفقیت غیر فعال شد')
 
 def auto_delete_on(update,context):
@@ -104,6 +108,7 @@ def auto_delete_on(update,context):
     set auto_delete = 1
     ''')
     connection.commit()
+    connection.close()
     update.message.reply_text('حذف خودکار با موفقیت فعال شد')
 
 def auto_delete_off(update,context):
@@ -113,6 +118,7 @@ def auto_delete_off(update,context):
     set auto_delete = 0
     ''')
     connection.commit()
+    connection.close()
     update.message.reply_text('حذف خودکار با موفقیت غیر فعال شد')
 
 def is_auto_delete_on():
@@ -147,6 +153,7 @@ def add_admin_to_db(list_of_admin):
         ({i} , {list_of_admin[i - 1]})
     ''')
     connection.commit()
+    connection.close()
 
 
 
@@ -177,6 +184,7 @@ def add_channle_to_db(list_of_channle):
         ({i} , {list_of_channle[i - 1]})
     ''')
     connection.commit()
+    connection.close()
 
 
 
@@ -290,6 +298,7 @@ def add_file_to_db(code , message_id ,from_admin):
     ({files_count + 1} , '{code}' , {message_id} , {from_admin})
     ''')
     connection.commit()
+    connection.close()
 
 
 def random_name():
@@ -324,6 +333,7 @@ def add_user_to_db(user_id , fname , lname):
     ({users_count + 1} , {user_id} , '{fname}' , '{lname}')
     ''')
     connection.commit()
+    connection.close()
 
 
 
@@ -471,6 +481,7 @@ def set_welcome_text(update,context):
     set welcome_text = '{welcome_text}'
     ''')
     connection.commit()
+    connection.close()
     update.message.reply_text('متن خوش آمد گویی ربات با موفقیت به روز شد!')
 
 
